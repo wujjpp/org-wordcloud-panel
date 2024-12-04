@@ -4,7 +4,7 @@ export interface SimpleOptions {
 
 
 export interface ItemData {
-  type: string;
-  name: string;
+  block_type_name: string;
+  block_name: string;
   value: number;
 }

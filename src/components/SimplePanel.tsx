@@ -42,15 +42,15 @@ interface Props extends PanelProps<SimpleOptions> {}
 
 const eventCallbacks = {
     "mouseover": (params: any )=> {
-        const type = params.data?.type
-        const name = params.data?.name
+        const blockTypeName = params.data?.blockTypeName
+        const blockName = params.data?.blockName
 
-        $(document).trigger("block-enter", {type, name})
+        $(document).trigger("block-enter", {blockTypeName, blockName})
     },
     "mouseout": (params: any) => {
-        const type = params.data?.type
-        const name = params.data?.type
-        $(document).trigger("block-leave", {type, name})
+      const blockTypeName = params.data?.blockTypeName
+      const blockName = params.data?.blockName
+        $(document).trigger("block-leave", {blockTypeName, blockName})
     }
 }
 
@@ -66,8 +66,9 @@ export const SimplePanel: React.FC<Props> = ({ options, data, width, height, fie
 
   const d = _.map(items, o => {
     return {
-        type: o.type,
-        name: `${o.name}(${o.value})`,
+        blockTypeName: o.block_type_name,
+        blockName: o.block_name,
+        name: `${o.block_name}(${o.value})`,
         value: o.value,
         textStyle: {
             color: gradientColor((o.value - minValue) * 1.0 / (maxValue - minValue)).toString()

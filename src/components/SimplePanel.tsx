@@ -43,7 +43,7 @@ interface Props extends PanelProps<SimpleOptions> {}
 const eventCallbacks = {
     "mouseover": (params: any )=> {
         const type = params.data?.type
-        const name = params.data?.type
+        const name = params.data?.name
 
         $(document).trigger("block-enter", {type, name})
     },

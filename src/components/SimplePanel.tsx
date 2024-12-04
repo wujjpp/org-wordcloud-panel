@@ -4,11 +4,13 @@
 
 import 'echarts-wordcloud';
 
+import { DataFrame, PanelProps } from '@grafana/data';
+import { ItemData, SimpleOptions } from 'types';
+
 import { PanelDataErrorView } from '@grafana/runtime';
-import { PanelProps } from '@grafana/data';
 import React from 'react';
 import ReactECharts from 'echarts-for-react';
-import { SimpleOptions } from 'types';
+import _ from 'lodash';
 import chroma from 'chroma-js';
 
 const colors = {
@@ -22,14 +24,61 @@ const colors = {
 
 const gradientColor = chroma.scale([colors.green, colors.white, colors.red])
 
+const dataFrameToTable = (dataFrame: DataFrame): ItemData[] => {
+    // 将series转换成table
+    const table: ItemData[] = []
+    for(let i = 0; i < dataFrame.length; i++) {
+      let obj: any = {}
+      for(const field of dataFrame.fields) {
+        obj[field.name] = field.values[i]
+      }
+      table.push(obj)
+    }
+  
+    return table
+  }
+  
 interface Props extends PanelProps<SimpleOptions> {}
 
+const eventCallbacks = {
+    "mouseover": (params: any )=> {
+        const type = params.data?.type
+        const name = params.data?.type
+
+        $(document).trigger("block-enter", {type, name})
+    },
+    "mouseout": (params: any) => {
+        const type = params.data?.type
+        const name = params.data?.type
+        $(document).trigger("block-leave", {type, name})
+    }
+}
 
 export const SimplePanel: React.FC<Props> = ({ options, data, width, height, fieldConfig, id }) => {
   if (data.series.length === 0) {
     return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
   }
 
+  const items = dataFrameToTable(data.series[0])
+
+  const minValue = _.minBy(items, o => o.value)?.value || 1
+  const maxValue = _.maxBy(items, o => o.value)?.value || 1
+
+  const d = _.map(items, o => {
+    return {
+        type: o.type,
+        name: `${o.name}(${o.value})`,
+        value: o.value,
+        textStyle: {
+            color: gradientColor((o.value - minValue) * 1.0 / (maxValue - minValue)).toString()
+        },
+        emphasis: {
+            textStyle: {
+                color:  colors.lightYellow
+            }
+        }
+    }
+  })
 
   let option = {
     tooltip: {
@@ -38,118 +87,25 @@ export const SimplePanel: React.FC<Props> = ({ options, data, width, height, fie
     backgroundColor: 'transparent',
     series: [ {
         type: 'wordCloud',
-        gridSize: 2,
+        shape: 'pentagon',
+        
+        left: 'center',
+        top: 'center',
+        width: '100%',
+        height: '100%',
+        right: null,
+        bottom: null,
+
+        gridSize: 8,
         sizeRange: [12, 50],
         rotationRange: [-90, 90],
-        shape: 'pentagon',
-        width: 600,
-        height: 400,
-        drawOutOfBound: true,
-        textStyle: {
-            color: function () {
-                return 'rgb(' + [
-                    Math.round(Math.random() * 160),
-                    Math.round(Math.random() * 160),
-                    Math.round(Math.random() * 160)
-                ].join(',') + ')';
-            }
-        },
-        emphasis: {
-            textStyle: {
-                shadowBlur: 10,
-                shadowColor: '#333'
-            }
-        },
-        data: [
-            {
-                name: 'Sam S Club',
-                value: 10000,
-                textStyle: {
-                    color: 'black'
-                },
-                emphasis: {
-                    textStyle: {
-                        color: 'red'
-                    }
-                }
-            },
-            {
-                name: 'Macys',
-                value: 6181
-            },
-            {
-                name: 'Amy Schumer',
-                value: 4386
-            },
-            {
-                name: 'Jurassic World',
-                value: 4055
-            },
-            {
-                name: 'Charter Communications',
-                value: 2467
-            },
-            {
-                name: 'Chick Fil A',
-                value: 2244
-            },
-            {
-                name: 'Planet Fitness',
-                value: 1898
-            },
-            {
-                name: 'Pitch Perfect',
-                value: 1484
-            },
-            {
-                name: 'Express',
-                value: 1112
-            },
-            {
-                name: 'Home',
-                value: 965
-            },
-            {
-                name: 'Johnny Depp',
-                value: 847
-            },
-            {
-                name: 'Lena Dunham',
-                value: 582
-            },
-            {
-                name: 'Lewis Hamilton',
-                value: 555
-            },
-            {
-                name: 'KXAN',
-                value: 550
-            },
-            {
-                name: 'Mary Ellen Mark',
-                value: 462
-            },
-            {
-                name: 'Farrah Abraham',
-                value: 366
-            },
-            {
-                name: 'Rita Ora',
-                value: 360
-            },
-            {
-                name: 'Serena Williams',
-                value: 282
-            },
-            {
-                name: 'NCAA baseball tournament',
-                value: 273
-            },
-            {
-                name: 'Point Break',
-                value: 265
-            }
-        ]
+        rotationStep: 30,
+        shrinkToFit: true,
+        
+        drawOutOfBound: false,
+        layoutAnimation: false,
+
+        data: d
     } ]
   };
 
@@ -160,8 +116,9 @@ export const SimplePanel: React.FC<Props> = ({ options, data, width, height, fie
       lazyUpdate={true}
       style={{height: `${height}px`, width: `${width}px`}}
       theme={"dark"}
+      
       // onChartReady={this.onChartReadyCallback}
-      // onEvents={EventsDict}
+      onEvents={eventCallbacks}
       // opts={}
   />);
 };

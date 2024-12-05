@@ -8,3 +8,8 @@ export interface ItemData {
   block_name: string;
   value: number;
 }
+
+export interface EventItem {
+  blockTypeName: string;
+  blockName: string;
+}

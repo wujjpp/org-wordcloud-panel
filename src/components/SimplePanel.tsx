@@ -5,7 +5,7 @@
 import 'echarts-wordcloud';
 
 import { DataFrame, PanelProps } from '@grafana/data';
-import { ItemData, SimpleOptions } from 'types';
+import { EventItem, ItemData, SimpleOptions } from 'types';
 
 import { PanelDataErrorView } from '@grafana/runtime';
 import React from 'react';
@@ -41,30 +41,28 @@ const dataFrameToTable = (dataFrame: DataFrame): ItemData[] => {
 interface Props extends PanelProps<SimpleOptions> {}
 
 interface State {
-  blockTypeName: string;
-  blockName: string;
+  selectedBlocks: EventItem[]
 }
 
-export class SimplePanel extends React.PureComponent<Props, State> {
+export class SimplePanel extends React.Component<Props, State> {
   state = {
-    blockTypeName: "",
-    blockName: ""
+    selectedBlocks: [] as EventItem[]
   }
 
   callbacks = {
     "mouseover": (params: any )=> {
-      if(this.state.blockName === "") {
+      if(this.state.selectedBlocks.length === 0) {
           const blockTypeName = params.data?.blockTypeName
           const blockName = params.data?.blockName
-          $(document).trigger("block-enter", {blockTypeName, blockName})
+          $(document).trigger("block-enter", {blocks: [{blockTypeName, blockName}]})
       }
     },
 
     "mouseout": (params: any) => {
-      if(this.state.blockName === "") {
+      if(this.state.selectedBlocks.length === 0) {
         const blockTypeName = params.data?.blockTypeName
         const blockName = params.data?.blockName
-        $(document).trigger("block-leave", {blockTypeName, blockName})
+        $(document).trigger("block-leave", {blocks: [{blockTypeName, blockName}]})
       }
     },
 
@@ -72,21 +70,20 @@ export class SimplePanel extends React.PureComponent<Props, State> {
       const blockTypeName = params.data?.blockTypeName
       const blockName = params.data?.blockName
       
-      if(this.state.blockTypeName !== blockTypeName || this.state.blockName !== blockName) {
-        $(document).trigger("block-leave", {blockTypeName: this.state.blockTypeName, blockName: this.state.blockName})
-        $(document).trigger("block-enter", {blockTypeName, blockName})
-
+      const obj = _.find(this.state.selectedBlocks, (o: EventItem) => o.blockTypeName === blockTypeName && o.blockName === blockName)
+      
+      if(obj) {
         this.setState({
-          blockTypeName,
-          blockName
+          selectedBlocks: [..._.filter(this.state.selectedBlocks, o => o !== obj)]
+        }, ()=>{
+          $(document).trigger("block-leave", {blocks: [{blockTypeName, blockName}]})
+          $(document).trigger("block-enter", {blocks: [...this.state.selectedBlocks]})
         })
-
       } else {
-        $(document).trigger("block-leave", {blockTypeName: this.state.blockTypeName, blockName: this.state.blockName})
-
         this.setState({
-          blockTypeName: "",
-          blockName: ""
+          selectedBlocks: [...this.state.selectedBlocks, {blockTypeName, blockName}]
+        }, () => {
+          $(document).trigger("block-enter", {blocks: [...this.state.selectedBlocks]})
         })
       }
     },
@@ -110,7 +107,7 @@ export class SimplePanel extends React.PureComponent<Props, State> {
           name: `${o.block_name}(${o.value})`,
           value: o.value,
           textStyle: {
-              color: o.block_type_name === this.state.blockTypeName && o.block_name === this.state.blockName ? colors.lightYellow : gradientColor((o.value - minValue) * 1.0 / (maxValue - minValue)).toString()
+              color: !!_.find(this.state.selectedBlocks, (obj: EventItem) => obj.blockTypeName === o.block_type_name && obj.blockName === o.block_name) ? colors.lightYellow : gradientColor((o.value - minValue) * 1.0 / (maxValue - minValue)).toString()
           },
           emphasis: {
               textStyle: {
@@ -140,6 +137,8 @@ export class SimplePanel extends React.PureComponent<Props, State> {
           sizeRange: [12, 40],
           rotationRange: [-90, 90],
           rotationStep: 30,
+
+          // shuffle: false,
           shrinkToFit: true,
           drawOutOfBound: false,
           layoutAnimation: true,

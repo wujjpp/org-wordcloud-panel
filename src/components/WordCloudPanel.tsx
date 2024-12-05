@@ -41,17 +41,20 @@ const dataFrameToTable = (dataFrame: DataFrame): ItemData[] => {
 interface Props extends PanelProps<SimpleOptions> {}
 
 interface State {
-  selectedBlocks: EventItem[]
+  selectedBlocks: EventItem[];
 }
 
-export class SimplePanel extends React.Component<Props, State> {
+export class WordCloudPanel extends React.Component<Props, State> {
+  
+  static GLOBAL_SELECTED_BLOCKS = [] as EventItem[]
+
   state = {
     selectedBlocks: [] as EventItem[]
   }
 
   callbacks = {
     "mouseover": (params: any )=> {
-      if(this.state.selectedBlocks.length === 0) {
+      if(WordCloudPanel.GLOBAL_SELECTED_BLOCKS.length === 0) {
           const blockTypeName = params.data?.blockTypeName
           const blockName = params.data?.blockName
           $(document).trigger("block-enter", {blocks: [{blockTypeName, blockName}]})
@@ -59,7 +62,7 @@ export class SimplePanel extends React.Component<Props, State> {
     },
 
     "mouseout": (params: any) => {
-      if(this.state.selectedBlocks.length === 0) {
+      if(WordCloudPanel.GLOBAL_SELECTED_BLOCKS.length === 0) {
         const blockTypeName = params.data?.blockTypeName
         const blockName = params.data?.blockName
         $(document).trigger("block-leave", {blocks: [{blockTypeName, blockName}]})
@@ -76,14 +79,17 @@ export class SimplePanel extends React.Component<Props, State> {
         this.setState({
           selectedBlocks: [..._.filter(this.state.selectedBlocks, o => o !== obj)]
         }, ()=>{
+          WordCloudPanel.GLOBAL_SELECTED_BLOCKS = _.filter(WordCloudPanel.GLOBAL_SELECTED_BLOCKS, o => o.blockTypeName !== blockTypeName && o.blockName !== blockName)
           $(document).trigger("block-leave", {blocks: [{blockTypeName, blockName}]})
-          $(document).trigger("block-enter", {blocks: [...this.state.selectedBlocks]})
+          $(document).trigger("block-enter", {blocks: WordCloudPanel.GLOBAL_SELECTED_BLOCKS})
+
         })
       } else {
         this.setState({
           selectedBlocks: [...this.state.selectedBlocks, {blockTypeName, blockName}]
         }, () => {
-          $(document).trigger("block-enter", {blocks: [...this.state.selectedBlocks]})
+          WordCloudPanel.GLOBAL_SELECTED_BLOCKS.push({blockTypeName, blockName})
+          $(document).trigger("block-enter", {blocks: WordCloudPanel.GLOBAL_SELECTED_BLOCKS})
         })
       }
     },

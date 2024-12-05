@@ -37,7 +37,7 @@ const dataFrameToTable = (dataFrame: DataFrame): ItemData[] => {
   
     return table
   }
-  
+
 interface Props extends PanelProps<SimpleOptions> {}
 
 interface State {

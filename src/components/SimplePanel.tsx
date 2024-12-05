@@ -1,14 +1,14 @@
 /*
- * Created by Wu Jian Ping on - 2024/12/04.
+ * Created by Wu Jian Ping on - 2024/12/05.
  */
 
 import 'echarts-wordcloud';
 
 import { DataFrame, PanelProps } from '@grafana/data';
 import { ItemData, SimpleOptions } from 'types';
-import React, { useEffect, useState } from 'react';
 
 import { PanelDataErrorView } from '@grafana/runtime';
+import React from 'react';
 import ReactECharts from 'echarts-for-react';
 import _ from 'lodash';
 import chroma from 'chroma-js';
@@ -40,22 +40,20 @@ const dataFrameToTable = (dataFrame: DataFrame): ItemData[] => {
   
 interface Props extends PanelProps<SimpleOptions> {}
 
+interface State {
+  blockTypeName: string;
+  blockName: string;
+}
 
+export class SimplePanel extends React.PureComponent<Props, State> {
+  state = {
+    blockTypeName: "",
+    blockName: ""
+  }
 
-export const SimplePanel: React.FC<Props> = ({ options, data, width, height, fieldConfig, id }) => {
-
-  const [selectedBlock, setSelectedBlock] = useState({
-    blockTypeName:"",
-    blockName:""
-  })
-
-  useEffect(()=>{
-    
-  })
-
-  const eventCallbacks = {
+  callbacks = {
     "mouseover": (params: any )=> {
-      if(selectedBlock.blockName === "") {
+      if(this.state.blockName === "") {
           const blockTypeName = params.data?.blockTypeName
           const blockName = params.data?.blockName
           $(document).trigger("block-enter", {blockTypeName, blockName})
@@ -63,7 +61,7 @@ export const SimplePanel: React.FC<Props> = ({ options, data, width, height, fie
     },
 
     "mouseout": (params: any) => {
-      if(selectedBlock.blockName === "") {
+      if(this.state.blockName === "") {
         const blockTypeName = params.data?.blockTypeName
         const blockName = params.data?.blockName
         $(document).trigger("block-leave", {blockTypeName, blockName})
@@ -73,19 +71,20 @@ export const SimplePanel: React.FC<Props> = ({ options, data, width, height, fie
     "click": (params: any) => {
       const blockTypeName = params.data?.blockTypeName
       const blockName = params.data?.blockName
-
-      if(selectedBlock.blockTypeName !== blockTypeName || selectedBlock.blockName !== blockName) {
-        $(document).trigger("block-leave", {blockTypeName: selectedBlock.blockTypeName, blockName: selectedBlock.blockName})
+      
+      if(this.state.blockTypeName !== blockTypeName || this.state.blockName !== blockName) {
+        $(document).trigger("block-leave", {blockTypeName: this.state.blockTypeName, blockName: this.state.blockName})
         $(document).trigger("block-enter", {blockTypeName, blockName})
 
-        setSelectedBlock({
+        this.setState({
           blockTypeName,
           blockName
         })
 
       } else {
-        $(document).trigger("block-leave", {blockTypeName: selectedBlock.blockTypeName, blockName: selectedBlock.blockName})
-        setSelectedBlock({
+        $(document).trigger("block-leave", {blockTypeName: this.state.blockTypeName, blockName: this.state.blockName})
+
+        this.setState({
           blockTypeName: "",
           blockName: ""
         })
@@ -93,68 +92,70 @@ export const SimplePanel: React.FC<Props> = ({ options, data, width, height, fie
     },
   }
 
-  if (data.series.length === 0) {
-    return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
-  }
-
-  const items = dataFrameToTable(data.series[0])
-
-  const minValue = _.minBy(items, o => o.value)?.value || 1
-  const maxValue = _.maxBy(items, o => o.value)?.value || 1
-
-  const d = _.map(items, o => {
-    return {
-        blockTypeName: o.block_type_name,
-        blockName: o.block_name,
-        name: `${o.block_name}(${o.value})`,
-        value: o.value,
-        textStyle: {
-            color: o.block_type_name === selectedBlock.blockTypeName && o.block_name === selectedBlock.blockName ? colors.lightYellow : gradientColor((o.value - minValue) * 1.0 / (maxValue - minValue)).toString()
-        },
-        emphasis: {
-            textStyle: {
-                color:  colors.lightYellow
-            }
-        }
+  render() {
+    const {data, id, fieldConfig, width, height} = this.props
+    if (data.series.length === 0) {
+      return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
     }
-  })
-
-  let option = {
-    tooltip: {
-      show: false
-    },
-    backgroundColor: 'transparent',
-    series: [ {
-        type: 'wordCloud',
-        shape: 'pentagon',
-        
-        left: 'center',
-        top: 'center',
-        width: '100%',
-        height: '100%',
-        right: null,
-        bottom: null,
-
-        gridSize: 8,
-        sizeRange: [12, 50],
-        // rotationRange: [-90, 90],
-        // rotationStep: 30,
-        shrinkToFit: true,
-        
-        drawOutOfBound: false,
-        layoutAnimation: false,
-
-        data: d
-    } ]
-  };
-
-  return (
-    <ReactECharts
-      option={option}
-      notMerge={false}
-      lazyUpdate={true}
-      style={{height: `${height}px`, width: `${width}px`}}
-      theme={"dark"}
-      onEvents={eventCallbacks}
-  />);
-};
+  
+    const items = dataFrameToTable(data.series[0])
+  
+    const minValue = _.minBy(items, o => o.value)?.value || 1
+    const maxValue = _.maxBy(items, o => o.value)?.value || 1
+  
+    const d = _.map(items, o => {
+      return {
+          blockTypeName: o.block_type_name,
+          blockName: o.block_name,
+          name: `${o.block_name}(${o.value})`,
+          value: o.value,
+          textStyle: {
+              color: o.block_type_name === this.state.blockTypeName && o.block_name === this.state.blockName ? colors.lightYellow : gradientColor((o.value - minValue) * 1.0 / (maxValue - minValue)).toString()
+          },
+          emphasis: {
+              textStyle: {
+                  color:  colors.lightYellow
+              }
+          }
+      }
+    })
+  
+    const option = {
+      tooltip: {
+        show: false
+      },
+      backgroundColor: 'transparent',
+      series: [ {
+          type: 'wordCloud',
+          shape: 'pentagon',
+          
+          left: 'center',
+          top: 'center',
+          width: '100%',
+          height: '100%',
+          right: null,
+          bottom: null,
+  
+          gridSize: 8,
+          sizeRange: [12, 40],
+          rotationRange: [-90, 90],
+          rotationStep: 30,
+          shrinkToFit: true,
+          drawOutOfBound: false,
+          layoutAnimation: true,
+          
+          data: d
+      } ]
+    };
+  
+    return (
+      <ReactECharts
+        option={option}
+        notMerge={false}
+        lazyUpdate={true}
+        style={{height: `${height}px`, width: `${width}px`}}
+        theme={"dark"}
+        onEvents={this.callbacks}
+    />);
+  }
+}

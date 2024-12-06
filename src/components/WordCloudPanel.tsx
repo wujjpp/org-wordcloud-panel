@@ -79,7 +79,7 @@ export class WordCloudPanel extends React.Component<Props, State> {
         this.setState({
           selectedBlocks: [..._.filter(this.state.selectedBlocks, o => o !== obj)]
         }, ()=>{
-          WordCloudPanel.GLOBAL_SELECTED_BLOCKS = _.filter(WordCloudPanel.GLOBAL_SELECTED_BLOCKS, o => o.blockTypeName !== blockTypeName && o.blockName !== blockName)
+          WordCloudPanel.GLOBAL_SELECTED_BLOCKS = _.filter(WordCloudPanel.GLOBAL_SELECTED_BLOCKS, o=>o.blockTypeName !== blockTypeName || o.blockName !== blockName)
           $(document).trigger("block-leave", {blocks: [{blockTypeName, blockName}]})
           $(document).trigger("block-enter", {blocks: WordCloudPanel.GLOBAL_SELECTED_BLOCKS})
 

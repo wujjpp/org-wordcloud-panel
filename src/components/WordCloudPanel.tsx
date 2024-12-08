@@ -81,7 +81,7 @@ export class WordCloudPanel extends React.Component<Props, State> {
         }, ()=>{
           WordCloudPanel.GLOBAL_SELECTED_BLOCKS = _.filter(WordCloudPanel.GLOBAL_SELECTED_BLOCKS, o=>o.blockTypeName !== blockTypeName || o.blockName !== blockName)
           $(document).trigger("block-leave", {blocks: [{blockTypeName, blockName}]})
-          $(document).trigger("block-enter", {blocks: WordCloudPanel.GLOBAL_SELECTED_BLOCKS})
+          $(document).trigger("block-selected", {blocks: WordCloudPanel.GLOBAL_SELECTED_BLOCKS})
 
         })
       } else {
@@ -89,7 +89,7 @@ export class WordCloudPanel extends React.Component<Props, State> {
           selectedBlocks: [...this.state.selectedBlocks, {blockTypeName, blockName}]
         }, () => {
           WordCloudPanel.GLOBAL_SELECTED_BLOCKS.push({blockTypeName, blockName})
-          $(document).trigger("block-enter", {blocks: WordCloudPanel.GLOBAL_SELECTED_BLOCKS})
+          $(document).trigger("block-selected", {blocks: WordCloudPanel.GLOBAL_SELECTED_BLOCKS})
         })
       }
     },

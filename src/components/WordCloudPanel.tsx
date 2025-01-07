@@ -96,7 +96,8 @@ export class WordCloudPanel extends React.Component<Props, State> {
   }
 
   render() {
-    const {data, id, fieldConfig, width, height} = this.props
+    const {data, id, fieldConfig, width, height, options} = this.props
+
     if (data.series.length === 0) {
       return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
     }
@@ -107,10 +108,15 @@ export class WordCloudPanel extends React.Component<Props, State> {
     const maxValue = _.maxBy(items, o => o.value)?.value || 1
   
     const d = _.map(items, o => {
+      let name = o.block_name
+      if(options.extendedFieldName) {
+        name += `(${(o as any)[options.extendedFieldName]})`
+      }
+
       return {
           blockTypeName: o.block_type_name,
           blockName: o.block_name,
-          name: `${o.block_name}(${o.value})`,
+          name: name,
           value: o.value,
           textStyle: {
               color: !!_.find(this.state.selectedBlocks, (obj: EventItem) => obj.blockTypeName === o.block_type_name && obj.blockName === o.block_name) ? colors.lightYellow : gradientColor((o.value - minValue) * 1.0 / (maxValue - minValue)).toString()

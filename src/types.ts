@@ -1,5 +1,5 @@
 export interface SimpleOptions {
-
+  extendedFieldName: string;
 }
 
 
